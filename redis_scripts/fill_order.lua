@@ -38,7 +38,7 @@ end
 function store_order(table, order_type, parent_id)
   local id, next_order_id = next_order_key(order_type)
   if parent_id then
-    id_for_score = tonumber(parent_id)
+    id_for_score = parent_id
   else
     id_for_score = id
   end
@@ -53,7 +53,7 @@ end
 -- Get the next ID to store the hash in
 local current_order_table = {stock = stock, from = from, shares = shares, price = price, twilio = twilio, broker_address = broker_address, broker_port = broker_port, broker_url = broker_url, parent = nil, created = created, filled = 0}
 
-local id, current_order_id = store_order(current_order_table, order_type)
+local current_order_id, current_order_key = store_order(current_order_table, order_type)
 
 -- Fill outstanding orders.
 local outstanding_opposites_key = stock .. '_' .. opposite_order_type(order_type) .. '_orders'
@@ -81,21 +81,21 @@ if unused_shares < 0 then
   -- The last opposite order couldn't be fully filled by this incoming order. It's by now been marked as
   -- filled, so create a partial order pointing to it.
   local parent_price = redis.call('HGET', parent_key, 'price')
-  local parent_id = redis.call('HGET', parent_key, 'id')
+  local parent_id = tonumber(redis.call('HGET', parent_key, 'id'))
   partial_order = {stock = stock, from = from, shares = unused_shares * -1, price = parent_price, parent = parent_id}
   store_order(partial_order, opposite_order_type(order_type), parent_id)
 
 elseif unused_shares > 0 and processed then
 
   -- This currently being added order couldn't be totally fufilled, so create a partial order to point to it.
-  partial_order = {stock = stock, from = from, shares = unused_shares, price = price, parent = current_order_id}
+  partial_order = {stock = stock, from = from, shares = unused_shares, price = price, parent = current_order_key}
   store_order(partial_order, order_type, current_order_id)
 end
 
 -- If this order has been filled, mark it as such.
 if processed then
-  redis.call('HSET', current_order_id, 'filled', '1')
-  redis.call('ZREM', order_set_key(order_type), current_order_id)
+  redis.call('HSET', current_order_key, 'filled', '1')
+  redis.call('ZREM', order_set_key(order_type), current_order_key)
 end
 
-return current_order_id
+return current_order_key
