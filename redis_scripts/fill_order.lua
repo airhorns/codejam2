@@ -36,15 +36,17 @@ function next_order_key(order_type)
 end
 
 function store_order(table, order_type, parent_id)
-  local id_for_score, next_order_id = next_order_key(order_type)
+  local id, next_order_id = next_order_key(order_type)
   if parent_id then
-    id_for_score = parent_id
+    id_for_score = tonumber(parent_id)
+  else
+    id_for_score = id
   end
-  redis.call('HSET', next_order_id, 'id', id_for_score)
+  redis.call('HSET', next_order_id, 'id', id)
   for k,v in pairs(table) do
     redis.call('HSET', next_order_id, k, v)
   end
-  redis.call('ZADD', order_set_key(order_type), score(table['price'], id, order_type), next_order_id)
+  redis.call('ZADD', order_set_key(order_type), score(table['price'], id_for_score, order_type), next_order_id)
   return id, next_order_id
 end
 
@@ -69,7 +71,7 @@ for i, opposite_key in pairs(outstanding_opposites) do
   redis.call('HSET', opposite_key, 'filled', 1)  -- Mark the other order as filled
   redis.call('ZREM', outstanding_opposites_key, opposite_key) -- Remove it from the outstanding orders set
   processed = true                                            -- Mark the currently-being-added order as filled as well.
-  if unused_shares < 0 then
+  if unused_shares <= 0 then
     parent_key = opposite_key
     break
   end
