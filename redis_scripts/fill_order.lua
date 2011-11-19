@@ -1,14 +1,6 @@
 local MAX_ID = 100000000
-local stock = KEYS[1]
-local order_type = KEYS[2]
-local from = ARGV[1]
-local shares = tonumber(ARGV[2])
-local price = tonumber(ARGV[3])
-local twilio = tonumber(ARGV[4])
-local broker_address = ARGV[5]
-local broker_port = ARGV[6]
-local broker_url = ARGV[7]
-local created = ARGV[8]
+local stock, order_type = KEYS[1], KEYS[2]
+local from, shares, price, twilio, broker, created = ARGV[1], tonumber(ARGV[2]), tonumber(ARGV[3]), tonumber(ARGV[4]), ARGV[5], ARGV[6]
 
 function score(price, id, order_type)
   if order_type == 'buy' then
@@ -56,14 +48,14 @@ end
 
 
 -- Get the next ID to store the hash in
-local current_order_table = {stock = stock, from = from, shares = shares, price = price, twilio = twilio, broker_address = broker_address, broker_port = broker_port, broker_url = broker_url, parent = nil, created = created, filled = 0}
+local current_order_table = {stock = stock, from = from, shares = shares, price = price, twilio = twilio, broker = broker, parent = nil, created = created, filled = 0}
 
 local current_order_id, current_order_key = store_order(current_order_table, order_type)
 
 function execute_trade(against_key, shares, price)
   -- Create a trade with the number of shares in this order
   trade_id, trade_key = next_order_key('trade')
-  trade = {shares = shares, id = trade_id, price = price}
+  trade = {shares = shares, id = trade_id, price = price, stock = stock}
   if order_type == 'buy' then
     trade['buy_order'] = current_order_key
     trade['sell_order'] = against_key

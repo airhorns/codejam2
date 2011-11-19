@@ -1,7 +1,7 @@
 require "rubygems"
 require "bundler/setup"
 Bundler.require :default, :test
-$:.unshift File.expand_path('../lib', File.dirname(__FILE__))
+$:.unshift File.expand_path('../', File.dirname(__FILE__))
 
 driver = :standard
 if driver == :synchrony

@@ -10,12 +10,12 @@ class StockManager
     @stock_name = name
   end
 
-  def buy(from, shares, price, twilio, broker_address, broker_port, broker_url)
-    $redis.fill_order([@stock_name, 'buy'], [from, shares, price, twilio, broker_address, broker_port, broker_url, timestamp])
+  def buy(from, shares, price, twilio, broker)
+    $redis.fill_order([@stock_name, 'buy'], [from, shares, price, twilio, broker, timestamp])
   end
 
-  def sell(from, shares, price, twilio, broker_address, broker_port, broker_url)
-    $redis.fill_order([@stock_name, 'sell'], [from, shares, price, twilio, broker_address, broker_port, broker_url, timestamp])
+  def sell(from, shares, price, twilio, broker)
+    $redis.fill_order([@stock_name, 'sell'], [from, shares, price, twilio, broker, timestamp])
   end
 
   def reset!

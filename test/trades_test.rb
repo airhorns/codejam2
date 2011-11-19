@@ -25,8 +25,8 @@ class StockManagerTradesTest < MiniTest::Unit::TestCase
     end
 
     Wire.pass while !listening
-    @manager.buy("1234", 200, 100, false, "a", "b", "c")
-    @manager.sell("1234", 200, 100, false, "a", "b", "c")
+    @manager.buy("1234", 200, 100, false, "a")
+    @manager.sell("1234", 200, 100, false, "a")
 
     wire.join
 
@@ -52,8 +52,8 @@ class StockManagerTradesTest < MiniTest::Unit::TestCase
     end
 
     Wire.pass while !listening
-    @manager.buy("1234", 200, 100, false, "a", "b", "c")
-    @manager.sell("1234", 300, 100, false, "a", "b", "c")
+    @manager.buy("1234", 200, 100, false, "a")
+    @manager.sell("1234", 300, 100, false, "a")
 
     wire.join
 
@@ -79,9 +79,9 @@ class StockManagerTradesTest < MiniTest::Unit::TestCase
     end
 
     Wire.pass while !listening
-    older_id = @manager.buy("1234", 200, 100, false, "a", "b", "c")
-    younger_id = @manager.buy("1234", 200, 100, false, "a", "b", "c")
-    sell_id = @manager.sell("1234", 200, 100, false, "a", "b", "c")
+    older_id = @manager.buy("1234", 200, 100, false, "a")
+    younger_id = @manager.buy("1234", 200, 100, false, "a")
+    sell_id = @manager.sell("1234", 200, 100, false, "a")
 
     wire.join
     assert_equal older_id, @trade['buy_order']
