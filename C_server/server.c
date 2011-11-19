@@ -1,15 +1,41 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
+#include <signal.h>
 #include "qdecoder.h"
-#include "hiredis.h"
+#include "./hiredis.h"
+#include "./async.h"
+#include "./adapters/libevent.h"
 
 //sync
+
+char *retStr; // made global for the redis callback
+char *broker; // made global for the redis callback
+
+void getCallBack(redisAsyncContext *c, void *r, void *privdata) {
+    redisReply *reply = r;
+    if (reply == NULL) return;
+
+    printf("argv[%s]: %s\n", (char*)privdata, reply->str);
+
+
+    strcat(retStr, "<Accept OrderRefId=\"");
+    strcat(retStr, reply->str); //TODO: verify it works
+    strcat(retStr, "\" />");
+
+
+    strcat(retStr, "</Exchange>\n</Response>\n");
+    printf("%s\n",retStr);
+    //TODO: send via curl
+    redisAsyncDisconnect(c);
+    printf("%s\n",retStr);
+}
 
 
 int main(void)
 {
+    retStr = malloc(sizeof(char)*400); // made global for the redis callback
+    broker = malloc(sizeof(char)*1000); // made global for the redis callback
     printf("Content-Type: text/plain \n\n");
     //Q_ENTRY *req = qCgiRequestParse(NULL);
     Q_ENTRY *req = qCgiRequestParse(NULL,0 );
@@ -24,7 +50,7 @@ int main(void)
     const int BrokerPort = req->getInt(req,"BrokerPort");
     const char *BrokerEndPoint = req->getStr(req,"BrokerEndpoint",false);
     free(req);
-    printf("MessageType = %s\n",MessageType);
+    /*printf("MessageType = %s\n",MessageType);
     printf("From = %s\n",From);
     printf("BS = %s\n",BS);
     printf("Shares = %d\n",Shares);
@@ -34,8 +60,7 @@ int main(void)
     printf("BrokerAddress = %s\n",BrokerAddr);
     printf("BrokerPort = %d\n",BrokerPort);
     printf("BrokerEndPoint = %s\n",BrokerEndPoint);
-
-    char *retStr = malloc(sizeof(char)*400);
+*/
     strcat(retStr, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n<Exchange>");
 //VALIDATION
     int failure = 0;
@@ -99,48 +124,47 @@ int main(void)
 end_verification:
     //TODO: phone verification
     //
-    if ( failure == 1) {strcat(retStr,failMsg);}
+    if ( failure == 1) {
+	strcat(retStr,failMsg);
+	strcat(retStr, "</Exchange>\n</Response>\n");
+	printf("%s\n",retStr);
+	//TODO: send via curl
+	printf("%s\n",retStr);
+    }
     else 
     {
 	//construct broker string:
-	char *broker = malloc(sizeof(char)*1000);
+	char * buf = malloc (sizeof(char)*6);
+	fprintf(buf, "%d",BrokerPort);
+	
 	strcat(broker,BrokerAddr);
 	strcat(broker,":");
-	strcat(broker,BrokerPort);
+	strcat(broker,buf);
 	strcat(broker,BrokerEndPoint);
 
-	redisContext *redC;
-	redisReply *rreply;
-    
-	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-	c = redisConnectWithTimeout((char*)"127.0.0.2", 6379, timeout);
+	signal(SIGPIPE, SIG_IGN);
+
+        redisAsyncContext *c = redisAsyncConnect("127.0.0.1", 6379); //FIXME: 
+
 	if (c->err) {
 	    printf("Connection error: %s\n", c->errstr); //FIXME: do we return something to the broker?
             exit(1);
 	}
-	
+	if ( BS == "B") BS = "b";
+	else if ( BS = "S" ) BS = "s";
 	//ALL THE LOGIC!!!!
-	reply = redisCommand(c,
-	    "eval FUNC!!!!! 7 %s %s %s %s %s %s %s ",
-	    From,
+	redisAsyncCommand(c, getCallBack, NULL,
+	    "evalsha 4e6a1846a5a6fc8f9685e006cd9fea4a4ce02e6b 2 %s %s %s %s %s %s %s ",
+	    Stock, 
 	    BS,
+	    From,
 	    Shares,
-	    Stock,
 	    Price,
 	    Twilio,
-	    broker );
-
-	printf("SET (binary API): %s\n", reply->str);
-        freeReplyObject(reply);
-	
-	free (broker);
-	strcat(retStr, "<Accept OrderRefId=\"1\" />");
+	    broker
+	    //TODO: TIMESTAMP 
+	    );
     }
-    char *suffix = "</Exchange>\n</Response>\n";
-    strcat(retStr,suffix);    
-    printf("%s\n",retStr);
-    //TODO: reply
- //   free (retStr);
     
     return 0;
 }
