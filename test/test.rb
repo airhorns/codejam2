@@ -8,5 +8,3 @@ require_relative './test_helper'
   younger_id = @manager.buy("1234", 100, 100, false, "a")
   sell_id = @manager.sell("1234", 150, 100, false, "a")
 end
-
-puts @trade

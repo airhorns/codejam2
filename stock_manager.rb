@@ -6,6 +6,10 @@ Bundler.require :default
 $redis = Redis::Scripted.connect(scripts_path: "./redis_scripts")
 
 class StockManager
+  def self.get(id)
+    $redis.hgetall(id)
+  end
+
   def initialize(name)
     @stock_name = name
   end
@@ -51,6 +55,6 @@ class StockManager
   private
 
   def timestamp
-    Time.now.to_s
+    Time.now.strftime("%Y-%m-%dT%H:%M:%S.%1N")
   end
 end

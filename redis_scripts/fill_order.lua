@@ -40,15 +40,17 @@ function store_order(table, order_type, parent_id)
   else
     id_for_score = id
   end
+  table['order_type'] = order_type
+  table['created'] = created
+  table['id'] = next_order_id
   store_table(table, next_order_id)
-  redis.call('HSET', next_order_id, 'id', id)
   redis.call('ZADD', order_set_key(order_type), score(table['price'], id_for_score, order_type), next_order_id)
+  redis.call('SADD', 'all', next_order_id)
   return id, next_order_id
 end
 
 -- Get the next ID to store the hash in
-local current_order_table = {stock = stock, from = from, shares = shares, price = price, twilio = twilio, broker = broker, parent = nil, created = created, filled = 0}
-
+local current_order_table = {stock = stock, from = from, shares = shares, price = price, twilio = twilio, broker = broker, parent = nil, filled = 0}
 local current_order_id, current_order_key = store_order(current_order_table, order_type)
 
 function execute_trade(against_key, shares, price)
@@ -64,8 +66,9 @@ function execute_trade(against_key, shares, price)
   end
 
   store_table(trade, trade_key)
-  redis.call('zadd', 'trades', trade_id, trade_key)
-  redis.call('publish', 'trades', trade_key)
+  redis.call('ZADD', 'trades', trade_id, trade_key)
+  redis.call('PUBLISH', 'trades', trade_key)
+  redis.call('SADD', 'all', trade_key)
   return trade_key
 end
 

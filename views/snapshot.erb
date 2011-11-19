@@ -1,0 +1,36 @@
+<h1>Snapshot</h1>
+
+<table>
+  <thead>
+    <th>Time</th>
+    <th>Type</th>
+    <th>Order Reference</th>
+    <th>Execution Match</th>
+    <th>Stock Amount</th>
+    <th>Stock Symbol</th>
+    <th>Sell Order Reference</th>
+    <th>Buy Order Reference</th>
+    <th>Parent Order Reference</th>
+    <th>Price</th>
+    <th>State</th>
+    <th>Client telephone #</th>
+  </thead>
+  <tbody>
+    <% @rows.each do |row| %>
+    <tr>
+      <td><%= row['timestamp']%></td>
+      <td><%= row['action']%></td>
+      <td><%= row['orderRef']%></td>
+      <td><%= row['matchNumber']%></td>
+      <td><%= row['amount']%></td>
+      <td><%= row['symbol']%></td>
+      <td><%= row['sellOrderRef']%></td>
+      <td><%= row['buyOrderRef']%></td>
+      <td><%= row['parentOrderRef']%></td>
+      <td><%= row['price']%></td>
+      <td><%= row['state']%></td>
+      <td><%= row['phone']%></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
