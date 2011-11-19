@@ -1,13 +1,19 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    ansi (1.4.0)
+    minitest (2.7.0)
     redis (2.2.2)
     redis-scripted (0.0.3)
       redis
+    turn (0.8.3)
+      ansi
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  minitest (~> 2.7.0)
   redis
   redis-scripted
+  turn
