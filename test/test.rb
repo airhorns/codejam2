@@ -3,27 +3,10 @@ require_relative './test_helper'
 @manager = StockManager.new("apple")
 @manager.reset!
 
-    listening = false
-    wire = Wire.new do
-      r = Redis.new
-      r.subscribe 'trades' do |on|
-        on.subscribe do |channel|
-          listening = true
-        end
-
-        on.message do |channel, message|
-          @trade = @manager.get(message)
-          r.unsubscribe
-        end
-
-      end
-    end
-
-    Wire.pass while !listening
-    older_id = @manager.buy("1234", 200, 100, false, "a")
-    younger_id = @manager.buy("1234", 200, 100, false, "a")
-    sell_id = @manager.sell("1234", 200, 100, false, "a")
-
-    wire.join
+20.times do
+  older_id = @manager.buy("1234", 100, 100, false, "a")
+  younger_id = @manager.buy("1234", 100, 100, false, "a")
+  sell_id = @manager.sell("1234", 150, 100, false, "a")
+end
 
 puts @trade

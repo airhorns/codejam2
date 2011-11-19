@@ -46,7 +46,6 @@ function store_order(table, order_type, parent_id)
   return id, next_order_id
 end
 
-
 -- Get the next ID to store the hash in
 local current_order_table = {stock = stock, from = from, shares = shares, price = price, twilio = twilio, broker = broker, parent = nil, created = created, filled = 0}
 
@@ -55,7 +54,7 @@ local current_order_id, current_order_key = store_order(current_order_table, ord
 function execute_trade(against_key, shares, price)
   -- Create a trade with the number of shares in this order
   trade_id, trade_key = next_order_key('trade')
-  trade = {shares = shares, id = trade_id, price = price, stock = stock}
+  trade = {shares = shares, id = trade_id, price = price, stock = stock, created = created}
   if order_type == 'buy' then
     trade['buy_order'] = current_order_key
     trade['sell_order'] = against_key
@@ -65,7 +64,7 @@ function execute_trade(against_key, shares, price)
   end
 
   store_table(trade, trade_key)
-  redis.call('sadd', 'trades', trade_key)
+  redis.call('zadd', 'trades', trade_id, trade_key)
   redis.call('publish', 'trades', trade_key)
   return trade_key
 end

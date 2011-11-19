@@ -7,6 +7,18 @@ class StockManagerTradesTest < MiniTest::Unit::TestCase
     @manager.reset!
   end
 
+  def test_buying_creates_a_trade
+    @manager.sell("1234", 100, 100, false, "a")
+    @manager.buy("1234", 100, 100, false, "a")
+    assert_equal 1, @manager.trade_count
+  end
+
+  def test_selling_creates_a_trade
+    @manager.buy("1234", 100, 100, false, "a")
+    @manager.sell("1234", 100, 100, false, "a")
+    assert_equal 1, @manager.trade_count
+  end
+
   def test_trade_is_published_for_even_sales
     listening = false
     wire = Wire.new do
