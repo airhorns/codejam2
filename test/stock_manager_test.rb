@@ -156,4 +156,30 @@ class SockManagerTest < MiniTest::Unit::TestCase
     assert @manager.filled?(filled2_id)
     assert !@manager.filled?(unfilled_id)
   end
+
+  def test_earlier_created_buy_orders_should_be_filled_first
+    filled1_id = @manager.buy("1234", 100, 100, false, "a", "b", "c")
+    filled2_id = @manager.buy("1234", 100, 100, false, "a", "b", "c")
+    unfilled_id = @manager.buy("1234", 100, 100, false, "a", "b", "c")
+    sell_id = @manager.sell("1234", 200, 100, false, "a", "b", "c")
+    assert_equal 0, @manager.outstanding_sell_orders
+    assert_equal 1, @manager.outstanding_buy_orders
+    assert @manager.filled?(sell_id)
+    assert @manager.filled?(filled1_id)
+    assert @manager.filled?(filled2_id)
+    assert !@manager.filled?(unfilled_id)
+  end
+
+  def test_earlier_created_sell_orders_should_be_filled_first
+    filled1_id = @manager.sell("1234", 100, 100, false, "a", "b", "c")
+    filled2_id = @manager.sell("1234", 100, 100, false, "a", "b", "c")
+    unfilled_id = @manager.sell("1234", 100, 100, false, "a", "b", "c")
+    buy_id = @manager.buy("1234", 200, 120, false, "a", "b", "c")
+    assert_equal 1, @manager.outstanding_sell_orders
+    assert_equal 0, @manager.outstanding_buy_orders
+    assert @manager.filled?(buy_id)
+    assert @manager.filled?(filled1_id)
+    assert @manager.filled?(filled2_id)
+    assert !@manager.filled?(unfilled_id)
+  end
 end
