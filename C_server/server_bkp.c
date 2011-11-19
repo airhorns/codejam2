@@ -2,32 +2,35 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/time.h>
 #include "qdecoder.h"
 #include "./hiredis.h"
-//#include "./async.h"
-//#include "./adapters/libevent.h"
+#include "./async.h"
+#include "./adapters/libevent.h"
 
 //sync
 
 char *retStr; // made global for the redis callback
 char *broker; // made global for the redis callback
 
-
-/*void getCallBack(redisAsyncContext *c, void *r, void *privdata) {
+void getCallBack(redisAsyncContext *c, void *r, void *privdata) {
     redisReply *reply = r;
     if (reply == NULL) return;
+
     printf("argv[%s]: %s\n", (char*)privdata, reply->str);
+
+
     strcat(retStr, "<Accept OrderRefId=\"");
     strcat(retStr, reply->str); //TODO: verify it works
     strcat(retStr, "\" />");
+
+
     strcat(retStr, "</Exchange>\n</Response>\n");
     printf("%s\n",retStr);
     //TODO: send via curl
     redisAsyncDisconnect(c);
     printf("%s\n",retStr);
 }
-*/
+
 
 int main(void)
 {
@@ -68,12 +71,18 @@ int main(void)
 	 { failure = 1; failMsg = "<Reject Reason=\"F\" />";}  
     else if (BS==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"I\" />";}  
+    else if (Shares == NULL) 
+	 { failure = 1; failMsg = "<Reject Reason=\"Z\" />";}  
+    else if (Price == NULL) 
+	 { failure = 1; failMsg = "<Reject Reason=\"X\" />";}  
     else if (Stock==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"S\" />";}  //FIXME: missing alphanumerical validation...
     else if (Twilio==NULL ) 
 	 { failure = 1; failMsg = "<Reject Reason=\"T\" />";}  
     else if (BrokerAddr ==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"A\" />";}  
+    else if (BrokerPort ==NULL) 
+	 { failure = 1; failMsg = "<Reject Reason=\"P\" />";}  
     else if (BrokerEndPoint ==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"E\" />";}  
 
@@ -139,76 +148,42 @@ end_verification:
 	strcat(retStr,failMsg);
 	strcat(retStr, "</Exchange>\n</Response>\n");
 	printf("%s\n",retStr);
+	//TODO: send via curl
+	printf("%s\n",retStr);
     }
     else 
     {
 	//construct broker string:
-	char * buf = malloc (sizeof(char)*7);
-	sprintf(buf, "%d",BrokerPort);
+	char * buf = malloc (sizeof(char)*6);
+	fprintf(buf, "%d",BrokerPort);
 	
 	strcat(broker,BrokerAddr);
 	strcat(broker,":");
 	strcat(broker,buf);
 	strcat(broker,BrokerEndPoint);
-	free(buf);
-        //redisAsyncContext *c = redisAsyncConnect("127.0.0.1", 6379); //FIXME: 
-	redisContext *c;
-	redisReply *reply;
 
-	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-        c = redisConnectWithTimeout((char*)"127.0.0.2", 6379, timeout);
+	signal(SIGPIPE, SIG_IGN);
+
+        redisAsyncContext *c = redisAsyncConnect("127.0.0.1", 6379); //FIXME: 
 
 	if (c->err) {
+	    printf("Connection error: %s\n", c->errstr); //FIXME: do we return something to the broker?
             exit(1);
 	}
-	if ( strcmp(BS,"B")==0) BS = "b";
-	else if ( strcmp(BS, "S")==0) BS = "s";
+	if ( BS == "B") BS = "b";
+	else if ( BS = "S" ) BS = "s";
 	//ALL THE LOGIC!!!!
-	//02fbe601b34a60b554fc0444157de4815a922442
-	//
-	char * shares_buf = malloc (sizeof(char)*10);
-	sprintf(shares_buf, "%d",Shares);
-	char * price_buf =  malloc(sizeof(char)*10);
-	sprintf(price_buf, "%d",Price);
-	time_t times = time(NULL);
-	struct tm * mytime =localtime(&times);
-	struct timeval tv;
-	gettimeofday (&tv, NULL);
-	char * timestamp = malloc(sizeof(char)*200);
-	sprintf(timestamp, "%d-%.2d-%.2dT%.2d:%.2d:%.2d.%ld", 
-		mytime->tm_year+1900,
-		mytime->tm_mon+1,
-		mytime->tm_mday,
-		mytime->tm_hour,
-		mytime->tm_min,
-		mytime->tm_sec,
-		(tv.tv_usec/100000)
-		);
-	//redisAsyncCommand(c, getCallBack, NULL,
-	reply = redisCommand(c, 
-	    "evalsha 02fbe601b34a60b554fc0444157de4815a922442 2 %s %s %s %s %s %s %s %s",
+	redisAsyncCommand(c, getCallBack, NULL,
+	    "evalsha 4e6a1846a5a6fc8f9685e006cd9fea4a4ce02e6b 2 %s %s %s %s %s %s %s ",
 	    Stock, 
 	    BS,
 	    From,
-	    shares_buf,
-	    price_buf,
+	    Shares,
+	    Price,
 	    Twilio,
-	    broker,
-	    timestamp
+	    broker
+	    //TODO: TIMESTAMP 
 	    );
-	free(price_buf);
-	free(shares_buf);
-	free(timestamp);
-	if (reply == NULL) return 0;
-	strcat(retStr, "<Accept OrderRefId=\"");
-        strcat(retStr, reply->str); //TODO: verify it works
-	strcat(retStr, "\" />");
-        strcat(retStr, "</Exchange>\n</Response>\n");
-	printf("%s\n",retStr);
-	//redisAsyncDisconnect(c);
-	redisFree(c);
-        freeReplyObject(reply);
-
     }
     
     return 0;
