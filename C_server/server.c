@@ -3,8 +3,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include "qdecoder.h"
-/* 4 for field name "data", 1 for "=" */
-/* 1 for added line break, 1 for trailing NUL */
+#include "hiredis.h"
+
+//sync
+
 
 int main(void)
 {
@@ -88,17 +90,52 @@ int main(void)
 		{ failure = 1; failMsg = "<Reject Reason=\"A\" />"; goto end_verification;}  
 	}
 	
+	//verify BrokerEndpoint
 	if (strlen(BrokerEndPoint) < 1) 
 	    { failure = 1; failMsg = "<Reject Reason=\"E\" />"; goto end_verification;}  
 
-	//verify BrokerEndpoint
     }
     
 end_verification:
     //TODO: phone verification
     //
     if ( failure == 1) {strcat(retStr,failMsg);}
-    else strcat(retStr, "<Accept OrderRefId=\"1\" />");
+    else 
+    {
+	//construct broker string:
+	char *broker = malloc(sizeof(char)*1000);
+	strcat(broker,BrokerAddr);
+	strcat(broker,":");
+	strcat(broker,BrokerPort);
+	strcat(broker,BrokerEndPoint);
+
+	redisContext *redC;
+	redisReply *rreply;
+    
+	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+	c = redisConnectWithTimeout((char*)"127.0.0.2", 6379, timeout);
+	if (c->err) {
+	    printf("Connection error: %s\n", c->errstr); //FIXME: do we return something to the broker?
+            exit(1);
+	}
+	
+	//ALL THE LOGIC!!!!
+	reply = redisCommand(c,
+	    "eval FUNC!!!!! 7 %s %s %s %s %s %s %s ",
+	    From,
+	    BS,
+	    Shares,
+	    Stock,
+	    Price,
+	    Twilio,
+	    broker );
+
+	printf("SET (binary API): %s\n", reply->str);
+        freeReplyObject(reply);
+	
+	free (broker);
+	strcat(retStr, "<Accept OrderRefId=\"1\" />");
+    }
     char *suffix = "</Exchange>\n</Response>\n";
     strcat(retStr,suffix);    
     printf("%s\n",retStr);

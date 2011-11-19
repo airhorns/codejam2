@@ -1,0 +1,39 @@
+twilio-python Changelog
+=======================
+
+Here you can see the full list of changes between each twilio-python release.
+
+Version 3.3.3
+-------------
+
+Released on November 3, 2011
+
+- Support unicode characters when validating requests
+- Add support for Great Britain language on the Say verb
+- Set Sms Application, Voice Application, and/or a Friendly 
+  Name when purchasing a number
+- Add missing parameters for resource creation and update
+
+Version 3.3.2
+-------------
+
+Released on September 29, 2011
+
+- TwiML verbs can now be used as context managers
+
+Version 3.3.1
+-------------
+
+Released on September 27, 2011
+
+- Allow phone numbers to be transferred between accounts and subaccounts
+
+Version 3.3.0
+-------------
+
+Released on September 21, 2011
+
+- Add support for Twilio Connect. Connect applications and authorized Connect
+  applications are now availble via the REST client.
+- Fix a problem where date and datetimes weren't coverted to strings when
+  querying list resources
