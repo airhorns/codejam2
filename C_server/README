@@ -1,0 +1,13 @@
+1) install thttpd (source included)
+2) install qdecoder (source included)
+
+3) configure the Make.sh to point to the correct libqdecoder.a
+4) configure the thttpd properly (sample config file included)
+    sample config assumes:
+	user thttpd, group nobody
+	home directory /home/www
+	cgi located at /home/www/cgi-bin
+	permissions: 755 for cgi-bin and index.cgi
+	permissions: 644 for any other file
+
+Redis interraction not yet done.
