@@ -1,10 +1,29 @@
 require_relative '../stock_manager'
+require_relative './test_helper'
 @manager = StockManager.new("apple")
 @manager.reset!
-unfilled_id = @manager.sell("1234", 100, 110, false, "a", "b", "c")
-filled1_id = @manager.sell("1234", 100, 105, false, "a", "b", "c")
-filled2_id = @manager.sell("1234", 100, 100, false, "a", "b", "c")
-buy_id = @manager.buy("1234", 200, 100, false, "a", "b", "c")
-puts @manager.outstanding_buy_orders
-puts @manager.outstanding_sell_orders
-puts @manager.get(unfilled_id)
+
+    listening = false
+    wire = Wire.new do
+      r = Redis.new
+      r.subscribe 'trades' do |on|
+        on.subscribe do |channel|
+          listening = true
+        end
+
+        on.message do |channel, message|
+          @trade = @manager.get(message)
+          r.unsubscribe
+        end
+
+      end
+    end
+
+    Wire.pass while !listening
+    older_id = @manager.buy("1234", 200, 100, false, "a", "b", "c")
+    younger_id = @manager.buy("1234", 200, 100, false, "a", "b", "c")
+    sell_id = @manager.sell("1234", 200, 100, false, "a", "b", "c")
+
+    wire.join
+
+puts @trade

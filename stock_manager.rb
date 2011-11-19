@@ -36,9 +36,18 @@ class StockManager
     $redis.hgetall(id)
   end
 
+  def get_order(type, id)
+    $redis.hgetall("#{@stock_name}_#{type}_#{id}")
+  end
+
   def filled?(id)
     $redis.hget(id, 'filled') == '1'
   end
+
+  def trade_count
+    $redis.scard('trades')
+  end
+
   private
 
   def timestamp

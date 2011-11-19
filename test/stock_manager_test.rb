@@ -1,7 +1,7 @@
 require_relative './test_helper'
 require_relative '../stock_manager'
 
-class SockManagerTest < MiniTest::Unit::TestCase
+class StockManagerTest < MiniTest::Unit::TestCase
   def setup
     @manager = StockManager.new("apple")
     @manager.reset!
@@ -181,5 +181,99 @@ class SockManagerTest < MiniTest::Unit::TestCase
     assert @manager.filled?(filled1_id)
     assert @manager.filled?(filled2_id)
     assert !@manager.filled?(unfilled_id)
+  end
+
+  def test_buying_creates_a_trade
+    @manager.sell("1234", 100, 100, false, "a", "b", "c")
+    @manager.buy("1234", 100, 100, false, "a", "b", "c")
+    assert_equal 1, @manager.trade_count
+  end
+
+  def test_selling_creates_a_trade
+    @manager.buy("1234", 100, 100, false, "a", "b", "c")
+    @manager.sell("1234", 100, 100, false, "a", "b", "c")
+    assert_equal 1, @manager.trade_count
+  end
+
+  def test_trade_is_published_for_even_sales
+    listening = false
+    wire = Wire.new do
+      r = Redis.new
+      r.subscribe 'trades' do |on|
+        on.subscribe do |channel|
+          listening = true
+        end
+
+        on.message do |channel, message|
+          @trade = @manager.get(message)
+          r.unsubscribe
+        end
+
+      end
+    end
+
+    Wire.pass while !listening
+    @manager.buy("1234", 200, 100, false, "a", "b", "c")
+    @manager.sell("1234", 200, 100, false, "a", "b", "c")
+
+    wire.join
+
+    assert_equal "200", @trade['shares']
+    assert_equal "100", @trade['price']
+  end
+
+  def test_trade_is_published_for_uneven_sales
+    listening = false
+    wire = Wire.new do
+      r = Redis.new
+      r.subscribe 'trades' do |on|
+        on.subscribe do |channel|
+          listening = true
+        end
+
+        on.message do |channel, message|
+          @trade = @manager.get(message)
+          r.unsubscribe
+        end
+
+      end
+    end
+
+    Wire.pass while !listening
+    @manager.buy("1234", 200, 100, false, "a", "b", "c")
+    @manager.sell("1234", 300, 100, false, "a", "b", "c")
+
+    wire.join
+
+    assert_equal "200", @trade['shares']
+    assert_equal "100", @trade['price']
+  end
+
+  def test_trade_is_given_proper_reference_id
+    listening = false
+    wire = Wire.new do
+      r = Redis.new
+      r.subscribe 'trades' do |on|
+        on.subscribe do |channel|
+          listening = true
+        end
+
+        on.message do |channel, message|
+          @trade = @manager.get(message)
+          r.unsubscribe
+        end
+
+      end
+    end
+
+    Wire.pass while !listening
+    older_id = @manager.buy("1234", 200, 100, false, "a", "b", "c")
+    younger_id = @manager.buy("1234", 200, 100, false, "a", "b", "c")
+    sell_id = @manager.sell("1234", 200, 100, false, "a", "b", "c")
+
+    wire.join
+
+    assert_equal "200", @trade['shares']
+    assert_equal "100", @trade['price']
   end
 end
