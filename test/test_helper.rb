@@ -1,7 +1,8 @@
 require "rubygems"
 require "bundler/setup"
-
 Bundler.require :default, :test
+$:.unshift File.expand_path('../lib', File.dirname(__FILE__))
+
 driver = :standard
 if driver == :synchrony
   # Make cutest fiber + eventmachine aware if the synchrony driver is used.

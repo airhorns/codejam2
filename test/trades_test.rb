@@ -1,12 +1,12 @@
-require_relative './test_helper'
-require_relative '../stock_manager'
+require File.expand_path './test_helper', File.dirname(__FILE__)
+require 'stock_manager'
 
-class StockManagerTest < MiniTest::Unit::TestCase
+class StockManagerTradesTest < MiniTest::Unit::TestCase
   def setup
     @manager = StockManager.new("apple")
     @manager.reset!
   end
-  
+
   def test_trade_is_published_for_even_sales
     listening = false
     wire = Wire.new do
