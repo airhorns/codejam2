@@ -5,23 +5,27 @@
 #  Created by jules testard on 19/11/11.
 #
 require "redis"
-
+require File.expand_path('./trade_manager', File.dirname(__FILE__))
 #Connect to redis server
-redis = Redis.connect
 
+$redis= Redis.new
 trap(:INT) { puts; exit }
 
-redis.subscribe(:one, :two) do |on|
-  on.subscribe do |channel, subscriptions|
-    puts "Subscribed to ##{channel} (#{subscriptions} subscriptions)"
-  end
+#Create http posts for requests going 
 
-  on.message do |channel, message|
+#subscribe to channel 'trade' (all incoming notifications).
+h=[]; i=0;
+$redis.subscribe('trades') { |on|
+  on.message {|channel,message| 
     puts "##{channel}: #{message}"
-    redis.unsubscribe if message == "exit"
-  end
-
-  on.unsubscribe do |channel, subscriptions|
-    puts "Unsubscribed from ##{channel} (#{subscriptions} subscriptions)"
-  end
-end
+    puts TradeManager.get(message)
+        #$redis.hgetall(message).tap do |hash|
+        #  h[i]=hash
+        #  i+=1;
+      #['shares', 'price'].each { |k| hash[k] = hash[k].to_i }
+        #end
+        #$redis.unsubscribe('trades') if message == 'apple_trade_order_1'
+  }
+  
+}
+#puts h
