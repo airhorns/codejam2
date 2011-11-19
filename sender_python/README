@@ -1,0 +1,15 @@
+in order to get the current state of this folder, the following must be done
+
+1) git clone git://github.com/twilio/twilio-python.git
+2) git clone https://github.com/andymccurdy/redis-py.git
+
+3) in each of the folders, run "sudo python setup.py install"
+4) copy the contents of both folders into one location
+5) add Sender.py to that location
+
+MISSING: 
+a) configuration of the redis server
+b) format of the messages from the redis server
+c) parsing of the messages into strings so that twillio accepts it
+
+NOTE: twillio is currently hardcoded with my info - if we run out of money, one of us will have to register another account
