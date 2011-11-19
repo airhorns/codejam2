@@ -1,0 +1,13 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    redis (2.2.2)
+    redis-scripted (0.0.3)
+      redis
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  redis
+  redis-scripted
