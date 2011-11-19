@@ -1,62 +1,15 @@
 require "rubygems"
 require "bundler/setup"
+require 'net/http'
+require 'uri'
 
 Bundler.require :default, :web
 require File.expand_path('./trade_manager', File.dirname(__FILE__))
+require File.expand_path('./snapshot', File.dirname(__FILE__))
 
+SILANIS_UPLOAD_URL = URI('http://ec2-184-73-166-185.compute-1.amazonaws.com/aws/rest/services/codejam/processes')
+SILANIS_AUTH_HEADER = 'Basic Y29kZWphbTpzZWNyZXQ='
 set :erb, :layout => :application
-
-class Snapshot
-  KEYS = ['timestamp', 'action', 'orderRef', 'matchNumber', 'amount', 'symbol', 'sellOrderRef', 'buyOrderRef', 'parentOrderRef', 'price', 'state', 'phone']
-
-#local current_order_table = {stock = stock, from = from, order_type = order_type, shares = shares, price = price, twilio = twilio, broker = broker, parent = nil, created = created, filled = 0}
-
-  def rows
-    rows = $redis.smembers('all').map do |id|
-      raw = TradeManager.get(id)
-      puts raw
-      if raw['from'].nil?
-        trade_to_row(raw)
-      else
-        order_to_row(raw)
-      end
-    end
-    rows.sort_by {|row| row['timestamp']}
-  end
-
-  ITEM_TO_ROW = {'created' => 'timestamp', 'shares' => 'amount', 'stock' => 'symbol', 'price' => 'price'}
-  TRADE_TO_ROW = ITEM_TO_ROW.merge({'buy_order_id' => 'buyOrderRef', 'sell_order_id' => 'sellOrderRef', 'id' => 'matchNumber'})
-  ORDER_TO_ROW = ITEM_TO_ROW.merge({'from' => 'phone', 'parent' => 'parentOrderRef', 'twilio' => false, 'broker' => false, 'id' => 'orderRef'})
-
-  def trade_to_row(raw)
-    row = apply_transformation(TRADE_TO_ROW, raw)
-    row['action'] = 'E'
-    fill_in_missing(row)
-  end
-
-  def order_to_row(raw)
-    row = apply_transformation(ORDER_TO_ROW, raw)
-    row['action'] = raw['order_type'][0].upcase
-    row['state'] = raw['filled'] == '1' ? 'F' : 'U'
-    fill_in_missing(row)
-  end
-
-  private
-
-  def fill_in_missing(row)
-    KEYS.each do |key|
-      row[key] ||= ""
-    end
-    row
-  end
-
-  def apply_transformation(transformation, raw)
-    transformation.reduce({}) do |row, (src, dest)|
-      row[dest] = raw[src] if dest
-      row
-    end
-  end
-end
 
 get '/' do
   'Hello World!'
@@ -76,6 +29,31 @@ end
 get '/snapshot' do
   @rows = Snapshot.new.rows
   erb :snapshot
+end
+
+get '/upload_snapshot' do
+  req = Net::HTTP::Post.new(SILANIS_UPLOAD_URL.path)
+  req['Authorization'] = SILANIS_AUTH_HEADER
+  req.content_type = "application/json"
+  snapshot = {
+    "name" => "Test Signing Process 1",
+    "description" => "Codejam Snapshot 1",
+    "owner" => {"name" => "Janet", "email" => "harry.brundage@gmail.com"},
+    "signer" => {"name" => "Judge Judy", "email" => "harry.brundage@jadedpixel.com" },
+    "transactions" => Snapshot.new.rows
+  }
+  req.body = snapshot.to_json.to_s
+
+  res = Net::HTTP.start(SILANIS_UPLOAD_URL.host, SILANIS_UPLOAD_URL.port) do |http|
+    http.request(req)
+  end
+
+  case res
+  when Net::HTTPSuccess
+    return "Snapshot uploaded successfully."
+  else
+    return res.value
+  end
 end
 
 get '/recent_trades.json' do
