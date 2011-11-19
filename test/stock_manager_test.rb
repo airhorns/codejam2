@@ -182,4 +182,13 @@ class StockManagerTest < MiniTest::Unit::TestCase
     assert @manager.filled?(filled2_id)
     assert !@manager.filled?(unfilled_id)
   end
+
+  def test_example_from_the_spec
+    @manager.buy("1234", 50, 91, false, "a")
+    @manager.buy("1234", 150, 91, false, "a")
+    @manager.buy("1234", 100, 92, false, "a")
+    @manager.sell("1234", 200, 90, false, "a")
+    @manager.sell("1234", 200, 90, false, "a")
+    @manager.buy("1234", 100, 92, false, "a")
+  end
 end

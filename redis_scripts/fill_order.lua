@@ -28,9 +28,12 @@ function next_order_key(order_type)
 end
 
 function store_table(table, key)
+  local list = {'HMSET', key}
   for k,v in pairs(table) do
-    redis.call('HSET', key, k, v)
+    list[#list + 1] = k
+    list[#list + 1] = v
   end
+  redis.call(unpack(list))
 end
 
 function store_order(table, order_type, parent_id)
@@ -114,7 +117,7 @@ if unused_shares < 0 then
   -- filled, so create a partial order pointing to it.
   local parent_price = redis.call('HGET', parent_key, 'price')
   local parent_id = tonumber(redis.call('HGET', parent_key, 'id'))
-  partial_order = {stock = stock, from = from, shares = unused_shares * -1, price = parent_price, parent = parent_id}
+  partial_order = {stock = stock, from = from, shares = unused_shares * -1, price = parent_price, parent = parent_key}
   store_order(partial_order, opposite_order_type(order_type), parent_id)
 elseif unused_shares > 0 and processed then
 
