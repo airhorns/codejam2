@@ -63,6 +63,12 @@ get '/:stock/trades.json' do
   content_type :json
   {:trades => TradeManager.new.trades_since(params[:stock], params[:since])}.to_json
 end
+
+get '/stocks.json' do
+  content_type :json
+  {:stocks => TradeManager.new.stocks}.to_json
+end
+
 get '/reset' do
   StockManager.new("").reset!
   erb :reset

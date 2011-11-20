@@ -11,12 +11,15 @@ class ChartView
 
     self = @
     object =
+      animation: false
       chart:
         renderTo: "graph"
         events:
           load: ->
-            series = @series[0]
-            window.getNewData = setInterval self.getNewData, self.UPDATE_INTERVAL
+            #window.getNewData = setInterval self.getNewData, self.UPDATE_INTERVAL
+
+      navigator:
+        enabled: false
 
       rangeSelector:
         buttons: [
@@ -46,13 +49,16 @@ class ChartView
 
       series: [
         name: "#{stock} price"
+        type: "candlestick"
         data: []
+        tooltip:
+          yDecimals: 2
       ]
 
     @chart = new Highcharts.StockChart(object)
     @getNewData()
 
-  remove: -> @chart.remove()
+  remove: -> @chart.destroy()
 
   getNewData: =>
     $.ajax
@@ -62,17 +68,30 @@ class ChartView
         since: @since
       success: (data) =>
         series = @chart.series[0]
-        for execution in data.trades
-          series.addPoint
+        points = for execution in data.trades
+          point =
             x: Date.parse(execution.created)
             y: execution.price
-          , false
+          debugger unless point.x > 0 && point.y > 0
+          series.addPoint point, false, false
+          point
+
         if data.trades.length > 0
           @since = parseInt(data.trades[data.trades.length - 1].id) + 1
-        @chart.redraw()
+          @chart.redraw()
         true
 
       error: -> console.error(arguments)
 
 $ ->
-  window.chart = new ChartView("ABLE")
+  $.ajax
+    url: '/stocks.json'
+    dataType: 'json'
+    success: (data) ->
+      for stock in data.stocks
+        option = $('<option>')
+        option.html(stock)
+        $('#stock').append(option)
+
+      $('#stock').change ->
+        window.chart = new ChartView($("#stock option:selected").html())

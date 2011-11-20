@@ -2,6 +2,8 @@ local MAX_ID = 100000000
 local stock, order_type = KEYS[1], KEYS[2]
 local from, shares, price, twilio, broker, created = ARGV[1], tonumber(ARGV[2]), tonumber(ARGV[3]), ARGV[4], ARGV[5], ARGV[6]
 
+redis.call('SADD', 'stocks', stock)
+
 function score(price, id, order_type)
   if order_type == 'buy' then
     return price * MAX_ID + (MAX_ID - id)

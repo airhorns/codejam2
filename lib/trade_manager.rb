@@ -8,7 +8,7 @@ class TradeManager
   end
 
   def trades_since(stock, since_id = 0)
-    @redis.zrangebyscore("trades_#{stock}", since_id, '+inf', :limit => [0, 200]).map do |id|
+    @redis.zrangebyscore("trades_#{stock}", since_id, '+inf', :limit => [0, 2000]).map do |id|
       convert(id)
     end
   end
@@ -29,5 +29,9 @@ class TradeManager
       order = self.get(order['parent'])
     end
     order
+  end
+
+  def stocks
+    $redis.smembers('stocks')
   end
 end
