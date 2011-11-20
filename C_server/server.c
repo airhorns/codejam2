@@ -3,77 +3,201 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/time.h>
-#include "qdecoder.h"
+#include <time.h>
+#include <unistd.h>
 #include "./hiredis.h"
-//#include "./async.h"
-//#include "./adapters/libevent.h"
+#include "./async.h"
+//#include <event2/event.h>
+//#include "qCgiRequest.h"
+#include <fcgi_stdio.h>
+#include <fcgi_config.h>
+//#include "adapters/ae.h"
+//#include "qdecoder.h"
 
 //sync
+//
+
+
+char _x2c(char hex_up, char hex_low) {
+        char digit;
+
+        digit = 16 * (hex_up >= 'A' ? ((hex_up & 0xdf) - 'A') + 10 : (hex_up - '0'));
+        digit += (hex_low >= 'A' ? ((hex_low & 0xdf) - 'A') + 10 : (hex_low - '0'));
+
+        return digit;
+}
+
+
+char *makeword(char *str, char stop) {
+        char *word;
+        int  len, i;
+
+        for (len = 0; ((str[len] != stop) && (str[len])); len++);
+        word = (char *)malloc(sizeof(char) * (len + 1));
+
+        for (i = 0; i < len; i++) word[i] = str[i];
+        word[i] = '\0';
+
+        if (str[len])len++;
+        for (i = len; str[i]; i++) str[i - len] = str[i];
+        str[i - len] = '\0';
+
+        return word;
+}
+
+size_t _urldecode(char *str) {
+        if (str == NULL) {
+                return 0;
+        }
+
+        char *pEncPt, *pBinPt = str;
+        for(pEncPt = str; *pEncPt != '\0'; pEncPt++) {
+                switch (*pEncPt) {
+                        case '+': {
+                                *pBinPt++ = ' ';
+                                break;
+                        }
+                        case '%': {
+                                *pBinPt++ = _x2c(*(pEncPt + 1), *(pEncPt + 2));
+                                pEncPt += 2;
+                                break;
+                        }
+                        default: {
+                                *pBinPt++ = *pEncPt;
+                                break;
+                        }
+                }
+        }
+        *pBinPt = '\0';
+
+        return (pBinPt - str);
+}
+
+char *_strtrim(char *str) {
+        int i, j;
+
+        if (str == NULL) return NULL;
+        for (j = 0; str[j] == ' ' || str[j] == '\t' || str[j] == '\r' || str[j] == '\n'; j++);
+        for (i = 0; str[j] != '\0'; i++, j++) str[i] = str[j];
+        for (i--; (i >= 0) && (str[i] == ' ' || str[i] == '\t' || str[i] == '\r' || str[i] == '\n'); i--);
+        str[i+1] = '\0';
+
+        return str;
+}
+
+
+
+char **_parse_(char ** request, const char *query, char equalchar, char sepchar) {
+        if(request == NULL) {
+                request = malloc(sizeof(char*)*15);
+		int ii;
+		for (ii=0;ii<15;ii++)
+		    request[ii] = malloc(sizeof(char)*250);
+		
+                if(request == NULL) return NULL;
+        }
+
+        char *newquery = NULL;
+
+        if(query != NULL) newquery = strdup(query);
+        while (newquery && *newquery) {
+                char *value = makeword(newquery, sepchar);
+                char *name = _strtrim(makeword(value, equalchar));
+                _urldecode(name);
+                _urldecode(value);
+//		printf("value = %s ; name = %s\n",value, name);
+		if (strcmp(name, "MessageType") == 0) strcpy(request[0],value);
+		else if (strcmp(name, "From") == 0) strcpy(request[1],value);
+		else if (strcmp(name, "BS") == 0) strcpy(request[2],value);
+		else if (strcmp(name, "Shares") == 0) strcpy(request[3],value);
+		else if (strcmp(name, "Stock") == 0) strcpy(request[4],value);
+		else if (strcmp(name, "Price") == 0) strcpy(request[5],value);
+		else if (strcmp(name, "Twilio") == 0) strcpy(request[6],value);
+		else if (strcmp(name, "BrokerAddress") == 0) strcpy(request[7],value);
+		else if (strcmp(name, "BrokerPort") == 0) strcpy(request[8],value);
+		else if (strcmp(name, "BrokerEndpoint") == 0) strcpy(request[9],value);
+                free(name);
+                free(value);
+        }
+        if(newquery != NULL) free(newquery);
+
+        return request;
+}
+
+
 
 char *retStr; // made global for the redis callback
 char *broker; // made global for the redis callback
 
 
-/*void getCallBack(redisAsyncContext *c, void *r, void *privdata) {
-    redisReply *reply = r;
-    if (reply == NULL) return;
-    printf("argv[%s]: %s\n", (char*)privdata, reply->str);
-    strcat(retStr, "<Accept OrderRefId=\"");
-    strcat(retStr, reply->str); //TODO: verify it works
-    strcat(retStr, "\" />");
-    strcat(retStr, "</Exchange>\n</Response>\n");
-    printf("%s\n",retStr);
-    //TODO: send via curl
-    redisAsyncDisconnect(c);
-    printf("%s\n",retStr);
-}
-*/
 
 int main(void)
 {
+//event_base_loop(base, 0x02);
+
+
+redisContext *c = redisConnect("127.0.0.1", 6379); //FIXME: 
+if (c->err) {
+printf("Error: %s\n", c->errstr);
+exit(1);
+}
+
+//redisLibeventAttach(c,base);
+
     retStr = malloc(sizeof(char)*400); // made global for the redis callback
     broker = malloc(sizeof(char)*1000); // made global for the redis callback
-    printf("Content-Type: text/plain \n\n");
+while(FCGI_Accept() >= 0) {
+    retStr[0]='\0';
+    broker[0]='\0';
+    //printf("Content-Type: text; charset=utf-8\n\n");
     //Q_ENTRY *req = qCgiRequestParse(NULL);
-    Q_ENTRY *req = qCgiRequestParse(NULL,0 );
-    const char *MessageType = req->getStr(req,"MessageType",false);
-    const char *From = req->getStr(req,"From",false);
-    const char *BS = req->getStr(req,"BS",false);
-    const int Shares = req->getInt(req,"Shares");
-    const char *Stock = req->getStr(req,"Stock",false);
-    const int Price = req->getInt(req,"Price");
-    const char *Twilio = req->getStr(req,"Twilio",false);
-    const char *BrokerAddr = req->getStr(req,"BrokerAddress",false);
-    const int BrokerPort = req->getInt(req,"BrokerPort");
-    const char *BrokerEndPoint = req->getStr(req,"BrokerEndpoint",false);
-    free(req);
-    /*printf("MessageType = %s\n",MessageType);
-    printf("From = %s\n",From);
-    printf("BS = %s\n",BS);
-    printf("Shares = %d\n",Shares);
-    printf("Stock = %s\n",Stock);
-    printf("Price = %d\n",Price);
-    printf("Twilio = %s\n",Twilio);
-    printf("BrokerAddress = %s\n",BrokerAddr);
-    printf("BrokerPort = %d\n",BrokerPort);
-    printf("BrokerEndPoint = %s\n",BrokerEndPoint);
-*/
-    strcat(retStr, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n<Exchange>");
+//    printf("%s\n",getenv("SERVER_HOSTNAME"));
+//
+    //char * input = getenv("QUERY_STRING");
+    char * in_len = getenv("CONTENT_LENGTH");
+    long len = 0;
+    if ( in_len != NULL)
+	len = strtol(getenv("CONTENT_LENGTH"),NULL,10);
+    char *input = malloc(sizeof(char)*(len+2));
+    long ii;
+    for(ii=0;ii<len;ii++)
+	input[ii] = getchar();
+    input[ii]='\0';
+  
+//    printf("Content-type: text/xml\n\n");
+    char **req = _parse_(NULL, input, '=','&');
+    const char *MessageType = req[0];
+    const char *From = req[1];
+    const char *BS = req[2];
+    const char *Shares = req[3];
+    const char *Stock = req[4];
+    const char *Price = req[5];
+    const char *Twilio = req[6];
+    const char *BrokerAddr = req[7];
+    const char *BrokerPort = req[8];
+    const char *BrokerEndPoint = req[9];
+
 //VALIDATION
     int failure = 0;
-    char * failMsg = malloc(sizeof(char)*25);
+    char * failMsg;
     if ( MessageType == NULL)
 	 { failure = 1; failMsg = "<Reject Reason=\"M\" />";}  
     else if (From == NULL )
 	 { failure = 1; failMsg = "<Reject Reason=\"F\" />";}  
     else if (BS==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"I\" />";}  
+    else if (Shares==NULL) 
+	 { failure = 1; failMsg = "<Reject Reason=\"Z\" />";}  
     else if (Stock==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"S\" />";}  //FIXME: missing alphanumerical validation...
+    else if (Price==NULL) 
+	 { failure = 1; failMsg = "<Reject Reason=\"X\" />";}  
     else if (Twilio==NULL ) 
 	 { failure = 1; failMsg = "<Reject Reason=\"T\" />";}  
     else if (BrokerAddr ==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"A\" />";}  
+    else if (BrokerPort ==NULL) 
+	 { failure = 1; failMsg = "<Reject Reason=\"P\" />";}  
     else if (BrokerEndPoint ==NULL) 
 	 { failure = 1; failMsg = "<Reject Reason=\"E\" />";}  
 
@@ -83,15 +207,15 @@ int main(void)
 	 { failure = 1; failMsg = "<Reject Reason=\"F\" />";}  
     else if (strcmp(BS, "B") != 0 && strcmp(BS,"S")!=0) 
 	 { failure = 1; failMsg = "<Reject Reason=\"I\" />";}  
-    else if (Shares < 1 || Shares >= 1000000) 
+    else if (atoi(Shares) < 1 || atoi(Shares) >= 1000000) 
 	 { failure = 1; failMsg = "<Reject Reason=\"Z\" />";}  
-    else if (Price < 1 || Price >= 100000) 
+    else if (atoi(Price) < 1 || atoi(Price) >= 100000) 
 	 { failure = 1; failMsg = "<Reject Reason=\"X\" />";}  
     else if (strlen(Stock) < 3 || strlen(Stock) > 8) 
 	 { failure = 1; failMsg = "<Reject Reason=\"S\" />";}  //FIXME: missing alphanumerical validation...
     else if (strcmp(Twilio, "Y") != 0 && strcmp(Twilio ,"N") !=0 ) 
 	 { failure = 1; failMsg = "<Reject Reason=\"T\" />";}  
-    else if (BrokerPort < 10 || BrokerPort > 99999) 
+    else if (atoi(BrokerPort) < 10 || atoi(BrokerPort) > 99999) 
 	 { failure = 1; failMsg = "<Reject Reason=\"P\" />";}  
 
     else
@@ -104,14 +228,28 @@ int main(void)
 	    if ( From[ii] < 48 || From[ii] > 57) //assers it is an integer
 		{ failure = 1; failMsg = "<Reject Reason=\"F\" />"; goto end_verification;}  
 	}
+	int strLen = strlen(Shares);
+	for(ii = 0 ; ii < strLen;ii++)
+        {
+            if ( (Shares[ii] < 48 || Shares[ii] > 57))
+		{ failure = 1; failMsg = "<Reject Reason=\"Z\" />"; goto end_verification;} 
+	}
+	
+
 	//verify stock
-	int strLen = strlen(Stock);
+	strLen = strlen(Stock);
 	for (ii = 0 ; ii < strLen;ii++)
 	{
 	    if ( (Stock[ii] < 48 || Stock[ii] > 57) 
 		&& (Stock[ii] < 65 || Stock[ii] > 90)
 		&& (Stock[ii] < 97 || Stock[ii] > 122)) 
 		{ failure = 1; failMsg = "<Reject Reason=\"S\" />"; goto end_verification;}  
+	}
+	strLen = strlen(Price);
+	for (ii = 0 ; ii < strLen;ii++)
+        {
+	    if( Price[ii] < 48 || Price[ii]>57) 
+		{ failure = 1; failMsg = "<Reject Reason=\"X\" />"; goto end_verification;}
 	}
 	//
 	strLen = strlen(BrokerAddr);
@@ -125,7 +263,12 @@ int main(void)
 		&& (BrokerAddr[ii] < 97 || BrokerAddr[ii] > 122)) 
 		{ failure = 1; failMsg = "<Reject Reason=\"A\" />"; goto end_verification;}  
 	}
-	
+	strLen = strlen(Price);
+        for (ii = 0 ; ii < strLen;ii++)
+        {
+            if( BrokerPort[ii]<48 || BrokerPort[ii]>57)
+		{ failure = 1; failMsg = "<Reject Reason=\"P\" />"; goto end_verification;} 
+	}
 	//verify BrokerEndpoint
 	if (strlen(BrokerEndPoint) < 1) 
 	    { failure = 1; failMsg = "<Reject Reason=\"E\" />"; goto end_verification;}  
@@ -135,41 +278,31 @@ int main(void)
 end_verification:
     //TODO: phone verification
     //
+    free(req);
+    strcat(retStr, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n  <Exchange>");
     if ( failure == 1) {
 	strcat(retStr,failMsg);
-	strcat(retStr, "</Exchange>\n</Response>\n");
-	printf("%s\n",retStr);
+	strcat(retStr, "  </Exchange>\n</Response>\n");
+	printf("Content-type: text/xml; charset=\"utf-8\"\n\n");
+	printf("%s",retStr);
     }
     else 
     {
 	//construct broker string:
-	char * buf = malloc (sizeof(char)*7);
-	sprintf(buf, "%d",BrokerPort);
 	
 	strcat(broker,BrokerAddr);
 	strcat(broker,":");
-	strcat(broker,buf);
+	strcat(broker,BrokerPort);
 	strcat(broker,BrokerEndPoint);
-	free(buf);
-        //redisAsyncContext *c = redisAsyncConnect("127.0.0.1", 6379); //FIXME: 
-	redisContext *c;
-	redisReply *reply;
+	signal(SIGPIPE, SIG_IGN);
 
-	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-        c = redisConnectWithTimeout((char*)"127.0.0.2", 6379, timeout);
 
-	if (c->err) {
-            exit(1);
-	}
+
 	if ( strcmp(BS,"B")==0) BS = "b";
 	else if ( strcmp(BS, "S")==0) BS = "s";
 	//ALL THE LOGIC!!!!
 	//02fbe601b34a60b554fc0444157de4815a922442
 	//
-	char * shares_buf = malloc (sizeof(char)*10);
-	sprintf(shares_buf, "%d",Shares);
-	char * price_buf =  malloc(sizeof(char)*10);
-	sprintf(price_buf, "%d",Price);
 	time_t times = time(NULL);
 	struct tm * mytime =localtime(&times);
 	struct timeval tv;
@@ -185,20 +318,36 @@ end_verification:
 		(tv.tv_usec/100000)
 		);
 	//redisAsyncCommand(c, getCallBack, NULL,
-	reply = redisCommand(c, 
-	    "evalsha 02fbe601b34a60b554fc0444157de4815a922442 2 %s %s %s %s %s %s %s %s",
+	//
+	//
+	redisReply *reply;
+	reply=redisCommand(c, 
+//	reply = redisCommand(c, 
+	    "evalsha d8a45aedefd0b4b34dee0d3416c668c6d09c8059 2 %s %s %s %s %s %s %s %s",
 	    Stock, 
 	    BS,
 	    From,
-	    shares_buf,
-	    price_buf,
+	    Shares,
+	    Price,
 	    Twilio,
 	    broker,
 	    timestamp
 	    );
-	free(price_buf);
-	free(shares_buf);
 	free(timestamp);
+    if (reply == NULL) return 0;
+    strcat(retStr, "<Accept OrderRefId=\"");
+    strcat(retStr, reply->str); //TODO: verify it works
+    strcat(retStr, "\" /></Exchange>\n</Response>\n");
+    printf("Content-type: text/xml; charset=\"utf-8\"\n\n");
+    printf("%s",retStr);
+    freeReplyObject(reply);
+}
+/*    strcat(retStr, "<Accept OrderRefId=\"");
+    strcat(retStr, "b01");//reply->str); //TODO: verify it works
+    strcat(retStr, "\" /></Exchange>\n</Response>\n");
+    printf("Content-type: text/xml; charset=\"utf-8\"\n\n");
+    printf("%s\n",retStr);
+
 	if (reply == NULL) return 0;
 	strcat(retStr, "<Accept OrderRefId=\"");
         strcat(retStr, reply->str); //TODO: verify it works
@@ -208,8 +357,9 @@ end_verification:
 	//redisAsyncDisconnect(c);
 	redisFree(c);
         freeReplyObject(reply);
-
+*/
+    free(input);
     }
-    
+    //event_dispatch();//verifies no more processes
     return 0;
 }
