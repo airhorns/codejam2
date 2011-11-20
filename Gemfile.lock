@@ -8,7 +8,7 @@ GIT
       uuid
 
 GIT
-  remote: git@github.com:hornairs/em-synchrony.git
+  remote: https://github.com/igrigorik/em-synchrony.git
   revision: f07b2a139ba05a1eaf3559541f3584c73afe05b2
   specs:
     em-synchrony (1.0.0)

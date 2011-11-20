@@ -16,12 +16,31 @@ class ChartView
         renderTo: "graph"
         events:
           load: ->
-            #window.getNewData = setInterval self.getNewData, self.UPDATE_INTERVAL
+            window.getNewData = setInterval self.getNewData, self.UPDATE_INTERVAL
 
       navigator:
         enabled: false
 
       rangeSelector:
+        buttonTheme:
+          fill: 'none'
+          stroke: 'none'
+          style:
+            color: '#039'
+            fontWeight: 'bold'
+          states:
+            hover:
+              fill: 'white'
+            select:
+              style:
+                color: 'white'
+        inputStyle:
+          color: '#039'
+          fontWeight: 'bold'
+        labelStyle:
+          color: 'silver'
+          fontWeight: 'bold'
+        selected: 1
         buttons: [
           count: 1
           type: "second"
@@ -49,7 +68,6 @@ class ChartView
 
       series: [
         name: "#{stock} price"
-        type: "candlestick"
         data: []
         tooltip:
           yDecimals: 2

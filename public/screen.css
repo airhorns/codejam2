@@ -48,11 +48,21 @@ img {
 	width:100%;
 }
 
-#header p,
-#header h1,
-#header h2 {
+#header p, #header h1, #header h2 {
 	padding:.4em 15px 0 15px;
 	margin:0;
+}
+#header h1 {
+  float: left;
+}
+#header img {
+  display: block;
+  float: left;
+  width: 100px;
+}
+#header h2 {
+  display: block;
+  clear: both;
 }
 #menu ul {
 	clear:left;
