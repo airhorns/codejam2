@@ -323,7 +323,7 @@ end_verification:
 	redisReply *reply;
 	reply=redisCommand(c, 
 //	reply = redisCommand(c, 
-	    "evalsha d8a45aedefd0b4b34dee0d3416c668c6d09c8059 2 %s %s %s %s %s %s %s %s",
+	    "evalsha 26974f66fe90cf8df6db952be0e0d929e1692d4c 2 %s %s %s %s %s %s %s %s",
 	    Stock, 
 	    BS,
 	    From,
