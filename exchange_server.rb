@@ -21,17 +21,16 @@ class ExchangeRunner < Goliath::API
       else
         manager.sell(order.number_from, order.shares, order.price, order.twilio, order.broker_url)
       end
-      id = " "
       resp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-      <Response>
-      <Exchange><Accept OrderRefId=\"#{id}\" /></Exchange>
-      </Response>"
+<Response>
+  <Exchange><Accept OrderRefId=\"#{id}\" /></Exchange>
+</Response>"
       [200, {}, resp]
     rescue InvalidOrderError => e
       resp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-       <Response>
-       <Exchange><Reject Reason=\"#{e.message}\" /></Exchange>
-       </Response>"
+<Response>
+  <Exchange><Reject Reason=\"#{e.message}\" /></Exchange>
+</Response>"
        [400, {}, resp]
     end
   end

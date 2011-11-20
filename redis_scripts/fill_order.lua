@@ -24,7 +24,7 @@ end
 
 function next_order_key(order_type)
   id = redis.call('INCR', (stock .. '_' .. order_type .. '_nextid'))
-  return id, (stock .. "_" .. order_type .. "_order_" .. id)
+  return id, (stock .. "_" .. string.upper(string.sub(order_type, 1, 2)) .. "_order_" .. id)
 end
 
 function store_table(table, key)

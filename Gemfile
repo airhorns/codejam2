@@ -21,6 +21,15 @@ group :sms do
   gem 'twilio-ruby'
 end
 
+group :http do
+  gem 'eventmachine'
+  gem "hiredis"
+  gem "em-synchrony", :require => ['em-synchrony', 'em-synchrony/em-http']
+  gem "em-http-request"
+  gem "redis", :require => ["redis/connection/synchrony", "redis"]
+  gem 'redis-scripted', :require => "redis/scripted"
+end
+
 group :test do
   gem 'turn'
   gem 'minitest', '~> 2.7.0'
