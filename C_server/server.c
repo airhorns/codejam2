@@ -263,7 +263,7 @@ while(FCGI_Accept() >= 0) {
 		&& (BrokerAddr[ii] < 97 || BrokerAddr[ii] > 122)) 
 		{ failure = 1; failMsg = "<Reject Reason=\"A\" />"; goto end_verification;}  
 	}
-	strLen = strlen(Price);
+	strLen = strlen(BrokerPort);
         for (ii = 0 ; ii < strLen;ii++)
         {
             if( BrokerPort[ii]<48 || BrokerPort[ii]>57)
