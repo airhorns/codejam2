@@ -1,34 +1,3 @@
-#
-#  notifyer.rb
-#  
-#
-#  Created by jules testard on 19/11/11.
-#
-require "redis"
-require File.expand_path('./trade_manager', File.dirname(__FILE__))
-#Connect to redis server
-
-$redis= Redis.new
-trap(:INT) { puts; exit }
-
-#Create http posts for requests going 
-
-#subscribe to channel 'trade' (all incoming notifications).
-h=[]; i=0;
-$redis.subscribe('trades') { |on|
-  on.message {|channel,message| 
-    puts "##{channel}: #{message}"
-    puts TradeManager.get(message)
-        #$redis.hgetall(message).tap do |hash|
-        #  h[i]=hash
-        #  i+=1;
-      #['shares', 'price'].each { |k| hash[k] = hash[k].to_i }
-        #end
-        #$redis.unsubscribe('trades') if message == 'apple_trade_order_1'
-  }
-  
-}
-#puts h#
 #  notifyer.rb
 #  
 #
@@ -65,7 +34,6 @@ $redis.subscribe('trades') { |on|
     hash['price'] = hash['price'].to_i
     buy_order = redis2.hgetall(hash['buy_order'])  
     sell_order = redis2.hgetall(hash['sell_order'])
-    
     #Create parameters for sending the post to the buyer and the seller
     buy_message={}
     sell_message={}
@@ -76,8 +44,11 @@ $redis.subscribe('trades') { |on|
     buy_message['MatchNumber']=hash['id'];
     sell_message['MatchNumber']=hash['id'];
     #url to which we have to send the post
-    buyer_url = buy_order['broker']
-    sell_url= sell_order['broker']
+    puts sell_order
+    raise "null url" if buy_order['broker'].nil?
+    buyer_url = "http://" + buy_order['broker']
+    raise "null url" if sell_order['broker'].nil?
+    sell_url= "http://" + sell_order['broker'] 
     #order ref id (of parent if partial order).
     buy_message['OrderReferenceIdentifier'] = find_order_ref_id(buy_order,redis2)
     sell_message['OrderReferenceIdentifier'] = find_order_ref_id(buy_order,redis2)
@@ -92,8 +63,8 @@ $redis.subscribe('trades') { |on|
     sell_message['To'] = buy_order['From']
     
     #Send post message to 
-    buy_resp = Net::HTTP.post_form(buyer_url, buy_message)
-    sell_resp = Net::HTTP.post_form(sell_url, buy_message)
+    buy_resp = Net::HTTP.post_form(URI(buyer_url), buy_message)
+    sell_resp = Net::HTTP.post_form(URI(sell_url), buy_message)
     
     
     #resp = Net::HTTP.post_form(buyer_url, params)
