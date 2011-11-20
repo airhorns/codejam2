@@ -28,14 +28,14 @@ post '/' do
 	else
 		id = manager.sell(@number_from, @shares, @price, @twilio, broker_url);
 	end
-     "<?xml version=”1.0” encoding=”UTF-8”?>
+     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
      <Response>
-     <Exchange><Accept OrderRefId=”#{@order_type}#{id}” /></Exchange>
+     <Exchange><Accept OrderRefId=\"#{@order_type}#{id}\" /></Exchange>
      </Response>"
   else
-     "<?xml version=”1.0” encoding=”UTF-8”?>
+     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
      <Response>
-     <Exchange><Reject Reason=”#{s}” /></Exchange>
+     <Exchange><Reject Reason=\"#{s}\" /></Exchange>
      </Response>"
   end
   
