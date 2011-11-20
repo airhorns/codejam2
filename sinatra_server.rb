@@ -2,8 +2,12 @@
 
 require 'rubygems'  
 require 'sinatra'
-require 'stock_manager.rb'
-
+require 'redis'
+require File.expand_path('./stock_manager', File.dirname(__FILE__))
+require "bundler/setup"
+Bundler.require :default, :web
+$:.unshift File.expand_path('.', File.dirname(__FILE__))
+$redis = Redis::Scripted.connect(scripts_path: "./redis_scripts")
 @order_type="";
 @broker_address="";
 @broker_port=80;
@@ -14,7 +18,7 @@ require 'stock_manager.rb'
 @price=0;
 @shares=0;
 get '/' do  
- "You are on the server page for codejam2!"
+  "You are on the server page for codejam2!"
 end
     
 post '/' do
@@ -22,18 +26,23 @@ post '/' do
   if s == nil
     id = 0;
     manager = StockManager.new(@stock);
-    broker_url = "#{@broker_address}:#{@broker_port}/#{@broker_endpoint}"
-	if @order_type=='B'
-		id = manager.buy(@number_from, @shares, @price, @twilio, broker_url);
-	else
-		id = manager.sell(@number_from, @shares, @price, @twilio, broker_url);
-	end
-     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+    if @broker_endpoint.chr == "/" 
+      broker_url = "#{@broker_address}:#{@broker_port}#{@broker_endpoint}"
+    else 
+      broker_url = "#{@broker_address}:#{@broker_port}/#{@broker_endpoint}"
+    end
+    puts broker_url
+    if @order_type=='B'
+      id = manager.buy(@number_from, @shares, @price, @twilio, broker_url);
+    else
+      id = manager.sell(@number_from, @shares, @price, @twilio, broker_url);
+    end
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
      <Response>
      <Exchange><Accept OrderRefId=\"#{@order_type}#{id}\" /></Exchange>
      </Response>"
   else
-     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
      <Response>
      <Exchange><Reject Reason=\"#{s}\" /></Exchange>
      </Response>"
@@ -51,7 +60,7 @@ def validate_order(params)
   end
   @number_from = params['From']
   if @number_from.size > 15 or @number_from.size < 11 or @number_from[0,1] != '+' or (@number_from=~/[0-9]*/)!=0
-      return 'F'
+    return 'F'
   end
   @order_type = params['BS']
   if @order_type != 'B' and @order_type != 'S'
@@ -78,7 +87,7 @@ def validate_order(params)
   @broker_port = params['BrokerPort'].to_i
   #Check inputs are numbers
   if @broker_port.size > 5 or @broker_port.size < 2 or @broker_port.to_s != params['BrokerPort']
-      return "P"
+    return "P"
   end
   @broker_address = params['BrokerAddress']
   #match email address
