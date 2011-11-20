@@ -23,7 +23,7 @@ function opposite_order_type(given_type)
 end
 
 function next_order_key(order_type)
-  id = redis.call('incr', (stock .. '_' .. order_type .. '_nextid'))
+  id = redis.call('INCR', (stock .. '_' .. order_type .. '_nextid'))
   return id, (stock .. "_" .. order_type .. "_order_" .. id)
 end
 
@@ -38,6 +38,16 @@ function store_table(table, key)
   redis.call(unpack(list))
 end
 
+
+function next_item_id()
+  return redis.call('INCR', ('next_global_id'))
+end
+
+function track_item(item_key)
+  print(item_key, next_item_id())
+  redis.call('ZADD', 'all', next_item_id(), item_key)
+end
+
 function store_order(table, order_type, parent_id)
   local id, next_order_id = next_order_key(order_type)
   if parent_id then
@@ -50,7 +60,7 @@ function store_order(table, order_type, parent_id)
   table['id'] = next_order_id
   store_table(table, next_order_id)
   redis.call('ZADD', order_set_key(order_type), score(table['price'], id_for_score, order_type), next_order_id)
-  redis.call('SADD', 'all', next_order_id)
+  track_item(next_order_id)
   return id, next_order_id
 end
 
@@ -73,7 +83,7 @@ function execute_trade(against_key, shares, price)
   store_table(trade, trade_key)
   redis.call('ZADD', 'trades', trade_id, trade_key)
   redis.call('PUBLISH', 'trades', trade_key)
-  redis.call('SADD', 'all', trade_key)
+  track_item(trade_key)
   return trade_key
 end
 

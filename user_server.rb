@@ -11,6 +11,7 @@ $redis = Redis::Scripted.connect(scripts_path: "./redis_scripts")
 require 'stock_manager'
 require 'trade_manager'
 require 'snapshot'
+require 'will_paginate'
 
 SILANIS_UPLOAD_URL = URI('http://ec2-184-73-166-185.compute-1.amazonaws.com/aws/rest/services/codejam/processes')
 SILANIS_AUTH_HEADER = 'Basic Y29kZWphbTpzZWNyZXQ='
@@ -23,11 +24,12 @@ get '/' do
 end
 
 get '/snapshot.?:format?' do
-  @rows = Snapshot.new.rows
   if params[:format] && params[:format] == 'json'
     content_type :json
+    @rows = Snapshot.new.all_rows
     @rows.to_json
   else
+    @rows = Snapshot.new(params[:page], params[:per_page]).rows
     erb :snapshot
   end
 end
@@ -41,7 +43,7 @@ get '/upload_snapshot' do
     "description" => "Codejam Snapshot 1",
     "owner" => {"name" => "Janet", "email" => "harry.brundage@gmail.com"},
     "signer" => {"name" => "Judge Judy", "email" => "harry.brundage@jadedpixel.com" },
-    "transactions" => Snapshot.new.rows
+    "transactions" => Snapshot.new.all_rows
   }
   req.body = snapshot.to_json.to_s
 
