@@ -17,9 +17,9 @@ class ExchangeRunner < Goliath::API
       order = Order.new(params)
       manager = StockManager.new(order.stock)
       id = if order.order_type == 'B'
-        manager.buy(order.number_from, order.shares, order.price, order.twilio, order.broker_url)
+        manager.buy(order.number_from, order.shares, order.price, order.twilio, order.broker_url.to_s)
       else
-        manager.sell(order.number_from, order.shares, order.price, order.twilio, order.broker_url)
+        manager.sell(order.number_from, order.shares, order.price, order.twilio, order.broker_url.to_s)
       end
       resp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <Response>
@@ -58,17 +58,13 @@ end
 class InvalidOrderError < ArgumentError; end
 
 class Order
-  attr_reader :stock, :number_from, :shares, :price, :twilio, :order_type
+  attr_reader :stock, :number_from, :shares, :price, :twilio, :order_type, :broker_url
 
   def initialize(params)
     result = validate(params)
     if result
       raise InvalidOrderError.new(result)
     end
-  end
-
-  def broker_url
-    "#{@broker_address}:#{@broker_port}/#{@broker_endpoint}"
   end
 
   def validate(params)
@@ -104,6 +100,7 @@ class Order
     if @price > 100000 or @price < 1
       return "X"
     end
+
     @broker_port = params['BrokerPort'].to_i
     if @broker_port.to_s != params['BrokerPort']
         return "P"
@@ -117,6 +114,7 @@ class Order
     if (@broker_endpoint =~ /(.*\/)*.*/) != 0
       return 'E'
     end
+    @broker_url = URI::HTTP.build(:host => @broker_address, :port => @broker_port, :path => @broker_endpoint)
     return nil
   end
 end

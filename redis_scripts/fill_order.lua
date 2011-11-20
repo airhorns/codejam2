@@ -1,6 +1,7 @@
 local MAX_ID = 100000000
 local stock, order_type = KEYS[1], KEYS[2]
 local from, shares, price, twilio, broker, created = ARGV[1], tonumber(ARGV[2]), tonumber(ARGV[3]), ARGV[4], ARGV[5], ARGV[6]
+print(from, shares, price, twilio, broker, created)
 
 function score(price, id, order_type)
   if order_type == 'buy' then
@@ -44,7 +45,6 @@ function next_item_id()
 end
 
 function track_item(item_key)
-  print(item_key, next_item_id())
   redis.call('ZADD', 'all', next_item_id(), item_key)
 end
 

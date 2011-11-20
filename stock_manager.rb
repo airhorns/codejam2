@@ -16,9 +16,7 @@ class StockManager
   end
 
   def reset!
-    $redis.keys("*").each do |key|
-      $redis.del(key)
-    end
+    $redis.flushdb
   end
 
   def outstanding_buy_orders

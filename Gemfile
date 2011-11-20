@@ -8,24 +8,23 @@ group :web do
   gem 'will_paginate'
 end
 
-group :server do
-  gem 'goliath'
-  gem 'eventmachine' #, :git => "https://github.com/eventmachine/eventmachine.git"
-  gem "hiredis"
-  gem "em-synchrony" #, :git => "https://github.com/igrigorik/em-synchrony.git"
-  gem "redis", :require => ["redis/connection/synchrony", "redis"]
-  gem 'redis-scripted', :require => "redis/scripted"
-end
-
 group :sms do
   gem 'twilio-ruby'
 end
 
 group :http do
   gem 'eventmachine'
-  gem "hiredis"
-  gem "em-synchrony", :require => ['em-synchrony', 'em-synchrony/em-http']
   gem "em-http-request"
+  gem "hiredis", "~> 0.3.0"
+  gem "em-synchrony", :require => ['em-synchrony', 'em-synchrony/em-http'], :git => "git@github.com:hornairs/em-synchrony.git"
+  gem "redis", :require => ["redis/connection/synchrony", "redis"]
+end
+
+group :server do
+  gem 'goliath'
+  gem 'eventmachine'
+  gem "hiredis", "~> 0.3.0"
+  gem "em-synchrony", :git => "git@github.com:hornairs/em-synchrony.git"
   gem "redis", :require => ["redis/connection/synchrony", "redis"]
   gem 'redis-scripted', :require => "redis/scripted"
 end

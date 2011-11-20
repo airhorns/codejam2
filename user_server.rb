@@ -61,7 +61,7 @@ end
 
 get '/recent_trades.json' do
   content_type :json
-  TradeManager.recent_trades(10).to_json
+  TradeManager.new.recent_trades(10).to_json
 end
 
 get '/reset' do
