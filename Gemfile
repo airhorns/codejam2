@@ -17,6 +17,10 @@ group :server do
   gem 'redis-scripted', :require => "redis/scripted"
 end
 
+group :sms do
+  gem 'twilio-ruby'
+end
+
 group :test do
   gem 'turn'
   gem 'minitest', '~> 2.7.0'

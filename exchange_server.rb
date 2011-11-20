@@ -97,7 +97,10 @@ class Order
     @twilio = params['Twilio']
     if @twilio != 'Y' and @twilio != 'N'
       return 'T'
+    else
+      @twilio = @twilio == 'Y'
     end
+
     @price = params['Price'].to_f
     if @price > 100000 or @price < 1
       return "X"

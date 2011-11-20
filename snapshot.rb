@@ -27,7 +27,7 @@ class Snapshot
   end
 
   ITEM_TO_ROW = {'created' => 'timestamp', 'shares' => 'amount', 'stock' => 'symbol', 'price' => 'price'}
-  TRADE_TO_ROW = ITEM_TO_ROW.merge({'buy_order_id' => 'buyOrderRef', 'sell_order_id' => 'sellOrderRef', 'id' => 'matchNumber'})
+  TRADE_TO_ROW = ITEM_TO_ROW.merge({'buy_order' => 'buyOrderRef', 'sell_order' => 'sellOrderRef', 'id' => 'matchNumber'})
   ORDER_TO_ROW = ITEM_TO_ROW.merge({'from' => 'phone', 'parent' => 'parentOrderRef', 'twilio' => false, 'broker' => false, 'id' => 'orderRef'})
 
   def trade_to_row(raw)
