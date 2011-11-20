@@ -24,8 +24,8 @@ function opposite_order_type(given_type)
 end
 
 function next_order_key(order_type)
-  id = redis.call('INCR', (stock .. '_' .. order_type .. '_nextid'))
-  return id, (stock .. "_" .. string.upper(string.sub(order_type, 1, 1)) .. id)
+  id = redis.call('INCR', (order_type .. '_nextid'))
+  return id, (string.upper(string.sub(order_type, 1, 1)) .. id)
 end
 
 function store_table(table, key)

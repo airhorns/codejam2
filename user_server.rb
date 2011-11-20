@@ -66,5 +66,5 @@ end
 
 get '/reset' do
   StockManager.new("").reset!
-  'Reset successful.'
+  erb :reset
 end

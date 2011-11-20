@@ -4,6 +4,7 @@ class Snapshot
   KEYS = ['timestamp', 'action', 'orderRef', 'matchNumber', 'amount', 'symbol', 'sellOrderRef', 'buyOrderRef', 'parentOrderRef', 'price', 'state', 'phone']
 
   def initialize(page = nil, per_page = nil)
+    @manager = TradeManager.new
     @page = page || 1
     @per_page = per_page || 30
     unless @per_page.to_i >= 1
@@ -48,7 +49,7 @@ class Snapshot
   def filter_rows(rows)
     rows
     .map do |id|
-        raw = TradeManager.get(id)
+        raw = @manager.get(id)
         if raw['from'].nil?
           trade_to_row(raw)
         else

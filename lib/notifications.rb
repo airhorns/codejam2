@@ -1,7 +1,7 @@
 module Notifications
-  ACCOUNT_SID = "AC888a285988894223a40b8d0df20d6d58"
-  AUTH_TOKEN = "6ea425d908a216d20d505eb013d55985"
-  NUMBER = "+15148005440"
+  ACCOUNT_SID = "ACfe0c2ad14e11f0d1eeff1cd6fdc34a57"
+  AUTH_TOKEN = "9868ece9300972904fa9730d19a24b02"
+  NUMBER = "+15148005441"
 
   # set up a client to talk to the Twilio REST API
   EM::Twilio.authenticate(ACCOUNT_SID, AUTH_TOKEN)
@@ -26,7 +26,7 @@ module Notifications
   end
 
   def self.notify_via_sms(order, trade)
-    EM::Twilio.send_sms NUMBER, order['from'], sms_body(order, trade) do |response|
+    EM::Twilio.send_sms order['from'], NUMBER, sms_body(order, trade) do |response|
       if response.success?
         puts "Notified #{order['from']} about T#{trade['id']} via SMS"
       else
