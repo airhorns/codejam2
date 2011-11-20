@@ -7,14 +7,20 @@ class TradeManager
     @redis = redis || $redis
   end
 
-  def recent_trades(limit)
-    @redis.zrevrangebyscore('trades', '+inf', '0', {:limit => ['0', limit.to_s]}).map do |id|
-      get(id)
+  def trades_since(stock, since_id = 0)
+    @redis.zrangebyscore("trades_#{stock}", since_id, '+inf', :limit => [0, 200]).map do |id|
+      convert(id)
     end
   end
 
   def get(id)
     @redis.hgetall(id)
+  end
+
+  def convert(id)
+    get(id).tap do |trade|
+      ['price', 'shares'].each {|k| trade[k] = trade[k].to_i}
+    end
   end
 
   def get_root(id)

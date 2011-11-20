@@ -6,6 +6,8 @@ group :web do
   gem 'sinatra'
   gem 'json'
   gem 'will_paginate'
+  gem 'coffee-script-source', "1.1.3"
+  gem 'coffee-script'
 end
 
 group :sms do

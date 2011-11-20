@@ -1,7 +1,6 @@
 local MAX_ID = 100000000
 local stock, order_type = KEYS[1], KEYS[2]
 local from, shares, price, twilio, broker, created = ARGV[1], tonumber(ARGV[2]), tonumber(ARGV[3]), ARGV[4], ARGV[5], ARGV[6]
-print(from, shares, price, twilio, broker, created)
 
 function score(price, id, order_type)
   if order_type == 'buy' then
@@ -81,7 +80,7 @@ function execute_trade(against_key, shares, price)
   end
 
   store_table(trade, trade_key)
-  redis.call('ZADD', 'trades', trade_id, trade_key)
+  redis.call('ZADD', 'trades_' .. stock, trade_id, trade_key)
   redis.call('PUBLISH', 'trades', trade_key)
   track_item(trade_key)
   return trade_key

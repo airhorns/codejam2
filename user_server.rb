@@ -59,12 +59,15 @@ get '/upload_snapshot' do
   end
 end
 
-get '/recent_trades.json' do
+get '/:stock/trades.json' do
   content_type :json
-  TradeManager.new.recent_trades(10).to_json
+  {:trades => TradeManager.new.trades_since(params[:stock], params[:since])}.to_json
 end
-
 get '/reset' do
   StockManager.new("").reset!
   erb :reset
+end
+
+get '/graphs.js' do
+  coffee :graphs
 end
