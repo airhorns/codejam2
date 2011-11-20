@@ -1,6 +1,6 @@
 thin stop
 kill `cat goliath.pid`
 ruby notification_daemon.rb stop
-rm *.pid
+rm -f *.pid
 mkdir -p log
-mv *.log log/
+mv -f *.log log/
