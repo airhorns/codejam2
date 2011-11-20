@@ -1,7 +1,9 @@
 require "rubygems"
 require "bundler/setup"
 Bundler.require :default, :test
+
 $:.unshift File.expand_path('../', File.dirname(__FILE__))
+$redis = Redis::Scripted.connect(scripts_path: "./redis_scripts")
 
 driver = :standard
 if driver == :synchrony

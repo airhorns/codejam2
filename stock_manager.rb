@@ -1,10 +1,3 @@
-require "rubygems"
-require "bundler/setup"
-
-Bundler.require :default
-
-$redis = Redis::Scripted.connect(scripts_path: "./redis_scripts")
-
 class StockManager
   def self.get(id)
     $redis.hgetall(id)

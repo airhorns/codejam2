@@ -4,11 +4,17 @@ require 'net/http'
 require 'uri'
 
 Bundler.require :default, :web
-require File.expand_path('./trade_manager', File.dirname(__FILE__))
-require File.expand_path('./snapshot', File.dirname(__FILE__))
+
+$:.unshift File.expand_path('.', File.dirname(__FILE__))
+$redis = Redis::Scripted.connect(scripts_path: "./redis_scripts")
+
+require 'stock_manager'
+require 'trade_manager'
+require 'snapshot'
 
 SILANIS_UPLOAD_URL = URI('http://ec2-184-73-166-185.compute-1.amazonaws.com/aws/rest/services/codejam/processes')
 SILANIS_AUTH_HEADER = 'Basic Y29kZWphbTpzZWNyZXQ='
+
 set :erb, :layout => :application
 
 get '/' do
@@ -24,11 +30,6 @@ get '/snapshot.?:format?' do
   else
     erb :snapshot
   end
-end
-
-get '/snapshot' do
-  @rows = Snapshot.new.rows
-  erb :snapshot
 end
 
 get '/upload_snapshot' do
@@ -59,4 +60,9 @@ end
 get '/recent_trades.json' do
   content_type :json
   TradeManager.recent_trades(10).to_json
+end
+
+get '/reset' do
+  StockManager.new("").reset!
+  'Reset successful.'
 end

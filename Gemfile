@@ -3,10 +3,18 @@ gem 'redis'
 gem 'redis-scripted', :require => "redis/scripted"
 
 group :web do
-  gem 'thin'
   gem 'sinatra'
   gem 'json'
-  gem 'shotgun'
+  gem 'will_paginate'
+end
+
+group :server do
+  gem 'goliath'
+  gem 'eventmachine' #, :git => "https://github.com/eventmachine/eventmachine.git"
+  gem "hiredis"
+  gem "em-synchrony" #, :git => "https://github.com/igrigorik/em-synchrony.git"
+  gem "redis", :require => ["redis/connection/synchrony", "redis"]
+  gem 'redis-scripted', :require => "redis/scripted"
 end
 
 group :test do

@@ -29,9 +29,11 @@ end
 
 function store_table(table, key)
   local list = {'HMSET', key}
+  local count = 2
   for k,v in pairs(table) do
-    list[#list + 1] = k
-    list[#list + 1] = v
+    list[count + 1] = k
+    list[count + 2] = v
+    count = count + 2
   end
   redis.call(unpack(list))
 end
