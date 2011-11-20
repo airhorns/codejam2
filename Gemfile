@@ -9,7 +9,7 @@ group :web do
 end
 
 group :sms do
-  gem 'twilio-ruby'
+  gem "em-twilio", :git => "git://github.com/groupme/em-twilio.git"
 end
 
 group :http do

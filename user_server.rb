@@ -5,7 +5,7 @@ require 'uri'
 
 Bundler.require :default, :web
 
-$:.unshift File.expand_path('.', File.dirname(__FILE__))
+$: << '.' << './lib'
 $redis = Redis::Scripted.connect(scripts_path: "./redis_scripts")
 
 require 'stock_manager'
