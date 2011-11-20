@@ -14,6 +14,10 @@ group :sms do
   gem "em-twilio", :git => "git://github.com/groupme/em-twilio.git"
 end
 
+group :daemon do
+  gem 'daemons'
+end
+
 group :http do
   gem 'eventmachine'
   gem "em-http-request"

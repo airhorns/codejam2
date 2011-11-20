@@ -3,7 +3,7 @@ require "bundler/setup"
 require 'net/http'
 require 'uri'
 
-$: << "." << './lib'
+$: << File.dirname(__FILE__) << File.expand_path('./lib', File.dirname(__FILE__))
 Bundler.require :http, :sms
 
 require "em-synchrony/fiber_iterator"
