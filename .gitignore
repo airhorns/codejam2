@@ -1,2 +1,4 @@
 goliath*
 log/*
+notification_server.rb.pid
+tmp/*
