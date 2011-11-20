@@ -6,17 +6,23 @@ group :web do
   gem 'sinatra'
   gem 'json'
   gem 'will_paginate'
+  gem 'coffee-script-source', "1.1.3"
+  gem 'coffee-script'
 end
 
 group :sms do
-  gem 'twilio-ruby'
+  gem "em-twilio", :git => "git://github.com/groupme/em-twilio.git"
+end
+
+group :daemon do
+  gem 'daemons'
 end
 
 group :http do
   gem 'eventmachine'
   gem "em-http-request"
   gem "hiredis", "~> 0.3.0"
-  gem "em-synchrony", :require => ['em-synchrony', 'em-synchrony/em-http'], :git => "git@github.com:hornairs/em-synchrony.git"
+  gem "em-synchrony", :require => ['em-synchrony', 'em-synchrony/em-http'], :git => "https://github.com/igrigorik/em-synchrony.git"
   gem "redis", :require => ["redis/connection/synchrony", "redis"]
 end
 
@@ -24,7 +30,7 @@ group :server do
   gem 'goliath'
   gem 'eventmachine'
   gem "hiredis", "~> 0.3.0"
-  gem "em-synchrony", :git => "git@github.com:hornairs/em-synchrony.git"
+  gem "em-synchrony", :git => "https://github.com/igrigorik/em-synchrony.git"
   gem "redis", :require => ["redis/connection/synchrony", "redis"]
   gem 'redis-scripted', :require => "redis/scripted"
 end

@@ -40,7 +40,7 @@ class StockManager
   end
 
   def trade_count
-    $redis.zcard('trades')
+    $redis.zcard("trades_#{@stock_name}")
   end
 
   private
