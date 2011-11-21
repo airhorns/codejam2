@@ -289,7 +289,7 @@ end_verification:
     else 
     {
 	//construct broker string:
-	
+	strcat(broker,"http://");	
 	strcat(broker,BrokerAddr);
 	strcat(broker,":");
 	strcat(broker,BrokerPort);
@@ -298,8 +298,10 @@ end_verification:
 
 
 
-	if ( strcmp(BS,"B")==0) BS = "b";
-	else if ( strcmp(BS, "S")==0) BS = "s";
+	if ( strcmp(BS,"B")==0) BS = "buy";
+	else if ( strcmp(BS, "S")==0) BS = "sell";
+	if ( strcmp(Twilio,"Y")==0) Twilio="true";
+	else if (strcmp(Twilio,"N")==0) Twilio="false";
 	//ALL THE LOGIC!!!!
 	//02fbe601b34a60b554fc0444157de4815a922442
 	//
